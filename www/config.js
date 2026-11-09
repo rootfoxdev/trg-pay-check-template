@@ -1,0 +1,1 @@
+window.TRG_BUILD = {};

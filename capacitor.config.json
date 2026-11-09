@@ -1,0 +1,6 @@
+{
+  "appId": "dev.rootfox.trgpaycheck",
+  "appName": "TRG Pay Check",
+  "webDir": "www",
+  "android": { "allowMixedContent": false, "webContentsDebuggingEnabled": false }
+}

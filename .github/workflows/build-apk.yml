@@ -1,0 +1,90 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Signing key. The same key must sign every build, or Android refuses the update
+      # and you have to uninstall (losing saved weeks).
+      #   1. Best: repo secrets KEYSTORE_B64 (base64 of the .keystore) and KEYSTORE_PASSWORD.
+      #   2. Private repo with no secrets: the first build makes a key and commits it to the repo.
+      #   3. Public repo with no secrets: stop, because a committed key would be public.
+      - name: Set up signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD_SECRET: ${{ secrets.KEYSTORE_PASSWORD }}
+          REPO_PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          KS=android/app/release.keystore
+          PW=android/app/keystore.password
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD_SECRET" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$KS"
+            echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD_SECRET" >> "$GITHUB_ENV"
+            echo "Using key from repo secrets."
+          elif [ -f "$KS" ] && [ -f "$PW" ]; then
+            echo "KEYSTORE_PASSWORD=$(cat "$PW")" >> "$GITHUB_ENV"
+            echo "Using key committed to this private repo."
+          elif [ "$REPO_PRIVATE" = "true" ]; then
+            PASS=$(openssl rand -base64 18 | tr -d '/+=')
+            keytool -genkeypair -v -keystore "$KS" -alias trgpay -keyalg RSA -keysize 2048 \
+              -validity 10000 -storepass "$PASS" -keypass "$PASS" -dname "CN=TRG Pay Check"
+            printf '%s' "$PASS" > "$PW"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+            git add -f "$KS" "$PW"
+            git commit -m "Add signing key (private repo only) [skip ci]"
+            git push
+            echo "KEYSTORE_PASSWORD=$PASS" >> "$GITHUB_ENV"
+            echo "Made a new signing key and committed it."
+          else
+            echo "::error::This repo is public, so the build won't make a signing key here (anyone could copy it). Make your own copy with 'Use this template' and choose Private, or add KEYSTORE_B64 and KEYSTORE_PASSWORD repo secrets."
+            exit 1
+          fi
+
+      - name: Install and copy web app into Android project
+        run: |
+          npm ci
+          npx cap sync android
+
+      - name: Build signed release APK
+        working-directory: android
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk ../TRG-Pay-Check-1.0.${{ github.run_number }}.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TRG-Pay-Check-1.0.${{ github.run_number }}
+          path: TRG-Pay-Check-*.apk
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: TRG Pay Check 1.0.${{ github.run_number }}
+          body: Install this APK over the previous one. Your saved weeks stay on the phone.
+          files: TRG-Pay-Check-*.apk
+          make_latest: true

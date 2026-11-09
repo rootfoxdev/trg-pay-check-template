@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#17242a">
+<title>TRG Pay Check</title>
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="app.css">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>TRG Pay <i>Check</i></h1>
+    <span class="save busy" id="saveState" aria-live="polite">Loading…</span>
+  </div>
+  <div class="banner" id="banner" hidden></div>
+
+  <div class="tabs" role="tablist">
+    <span class="pill" id="pill" aria-hidden="true"></span>
+    <button id="tab-week" role="tab" aria-selected="true" data-tab="week">Week</button>
+    <button id="tab-compare" role="tab" aria-selected="false" data-tab="compare">Compare</button>
+    <button id="tab-setup" role="tab" aria-selected="false" data-tab="setup">Setup</button>
+  </div>
+
+  <div class="weekbar" id="weekbar">
+    <button id="prevWeek" type="button" aria-label="Previous week">‹</button>
+    <div class="weeklabel"><b id="weekTitle">Week</b><span id="weekSub"></span><button id="thisWeek" class="thisweek" type="button" hidden>Back to this week</button></div>
+    <button id="nextWeek" type="button" aria-label="Next week">›</button>
+  </div>
+
+  <section id="view-week">
+    <div class="wrap">
+      <div>
+        <div class="strip" id="strip" aria-label="Paid hours per day"></div>
+        <div class="legend">
+          <span style="--c:var(--wharf)">Wharf</span><span style="--c:var(--rt)">Road train</span>
+          <span style="--c:var(--ab)">AB triple</span><span style="--c:var(--chick)">Chicken</span><span style="--c:var(--t-leave)">Leave</span>
+        </div>
+      </div>
+      <div class="panel days" id="days"></div>
+      <div class="panel doc" id="doc"></div>
+      <p class="hint">Predicted from TRG's payroll pattern. Overtime minutes depend on exact clock-on and clock-off times, so log them as you go.</p>
+    </div>
+  </section>
+
+  <section id="view-compare" hidden>
+    <div class="wrap">
+      <div id="verdict" class="verdict wait"></div>
+      <div class="panel doc" id="cmp"></div>
+      <p class="hint">Type the amounts from your real payslip. Blank lines are skipped. Anything more than $1 different is flagged.</p>
+    </div>
+  </section>
+
+  <section id="view-setup" hidden>
+    <div class="panel set" id="setup"></div>
+  </section>
+</div>
+
+<script src="config.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="vendor/jspdf.plugin.autotable.min.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
