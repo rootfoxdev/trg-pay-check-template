@@ -10,6 +10,8 @@ permissions:
 
 jobs:
   build:
+    # The shared template doesn't build itself; copies made from it do.
+    if: github.repository != 'rootfoxdev/trg-pay-check-template'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
